@@ -6,29 +6,16 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
     QDialogButtonBox,
+    QLabel,
+    QTabWidget,
     QDialog,
+    QFileDialog,
     QMainWindow
 )
 
 from widgets.species_editor import SpeciesEditor
 from config_handler import ConfigHandler
-
-
-
-
-class SaveDialog(QDialog):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.setWindowTitle('Save config file')
         
-        #path = QLineEdit()
-        
-        #self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-        #self.button_box.setCenterButtons(True)
-        #self.button_box.accepted.connect(self.apply)
-        #self.button_box.rejected.connect(self.close)
-        
-
 
 
 
@@ -53,12 +40,18 @@ class MainWindow(QMainWindow):
         save_action.triggered.connect(self.save)
         self.file_menu.addAction(save_action)
 
-        load_action = QAction('Load YAML (dummy)', self)
+        load_action = QAction('Load YAML', self)
         load_action.triggered.connect(self.load_yaml)
         self.file_menu.addAction(load_action)
 
+        central_tab = QTabWidget()
+        central_tab.setTabPosition(QTabWidget.West)
         self.species_editor = SpeciesEditor(self.config['CHEMICAL COMPOSITION PARAMETERS'])
-        self.setCentralWidget(self.species_editor)
+        central_tab.addTab(self.species_editor, 'Species')
+        central_tab.addTab(QLabel('Tab2'), 'Tab2')
+        central_tab.addTab(QLabel('Tab3'), 'Tab3')
+
+        self.setCentralWidget(central_tab)
 
         init_time = (time() - start_time) * 1000
         print('Init time: %.3f ms' % init_time)
@@ -70,7 +63,14 @@ class MainWindow(QMainWindow):
     
 
     def load_yaml(self, fname=None):
-        pass
+        # TODO?: create the dialog in __init__ and reuse it
+        dialog = QFileDialog(self)
+        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        fname = dialog.getOpenFileName(filter='*.yaml')[0]
+        if fname != '':
+            self.config.read_yaml(fname)
+            self.species_editor.table.species_dict = self.config['CHEMICAL COMPOSITION PARAMETERS']
+            self.species_editor.table.refresh()
 
 
 

@@ -30,7 +30,6 @@ class SpeciesEditor(QWidget):
     def __init__(self, species_dict=None):
         super().__init__()
         self.table = SpeciesTable(species_dict)
-        
 
         self.buttons = {name: QPushButton(name) for name in ['Add', 'Edit', 'Remove', 'Clear']}
         self.buttons['Add'].clicked.connect(self.table.addEntry)
@@ -156,10 +155,11 @@ class LineSpecGroup(QGroupBox):
         super().__init__()
         self.setTitle('Line Specifications')
         grid = QGridLayout()
+        self.labels = [QLabel(spec_name) for spec_name in LINE_SPECS]
         self.specs = {}
 
         for i, spec_name in enumerate(LINE_SPECS):
-            grid.addWidget(QLabel(spec_name + ':'), i, 0)
+            grid.addWidget(self.labels[i], i, 0)
             self[spec_name] = QComboBox()
             for option in LINE_SPECS[spec_name]['options']:
                 self[spec_name].addItem(option)
@@ -190,6 +190,8 @@ class LineSpecGroup(QGroupBox):
         enable = Qt.CheckState(state) == Qt.CheckState.Unchecked
         for spec_widget in self.specs.values():
             spec_widget.setEnabled(enable)
+        for label in self.labels:
+            label.setEnabled(enable)
 
 
 
