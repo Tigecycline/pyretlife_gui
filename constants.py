@@ -1,3 +1,5 @@
+# TODO?: use a yaml file instead
+
 SPECIES_NAMES = {
     'CH4': 'methane',
     'CO': 'carbon monoxide',
@@ -25,4 +27,13 @@ PRIOR_PARAM_NAMES = {
     'log-uniform': ['log_lower', 'log_upper'],
     'gaussian': ['mean', 'sigma'],
     'log-gaussian': ['log_mean', 'log_sigma']
+}
+
+LINE_SPECS = {
+    # NB Resolution must the last one and a default resolution has to be specified
+    'Isotope': {'options': ['all', 'main'], 'default': 'main'},
+    'Database': {'options': ['EX21', 'HP10', 'HN20', 'PK95'], 'default': 'HN20'},
+    'Broadening': {'options': ['air', 'CO2', 'HH', 'H2O'], 'default': 'air'},
+    'Cutoff': {'options': ['C25', 'C100', 'Chubb', 'BG69', 'HB02', 'nocut'], 'default': 'C25'},
+    'Resolution': {'options': ['50', '100', '200', '1000'], 'default': '50'}
 }

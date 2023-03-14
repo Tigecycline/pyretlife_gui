@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QMessageBox,
     QLabel,
+    QCheckBox,
     QLineEdit,
     QComboBox,
     QPushButton,
@@ -20,7 +21,7 @@ from PySide6.QtWidgets import (
 
 from widgets.util_widgets import EditableList
 from config_handler import param_dict
-from constants import SPECIES_NAMES, PRIOR_PARAM_NAMES
+from constants import SPECIES_NAMES, PRIOR_PARAM_NAMES, LINE_SPECS
 
 
 
@@ -150,6 +151,50 @@ class SpeciesTable(QTableWidget):
 
 
 
+class LineSpecGroup(QGroupBox):
+    def __init__(self):
+        super().__init__()
+        self.setTitle('Line Specifications')
+        grid = QGridLayout()
+        self.specs = {}
+
+        for i, spec_name in enumerate(LINE_SPECS):
+            grid.addWidget(QLabel(spec_name + ':'), i, 0)
+            self[spec_name] = QComboBox()
+            for option in LINE_SPECS[spec_name]['options']:
+                self[spec_name].addItem(option)
+            default_value = LINE_SPECS[spec_name].get('default')
+            if default_value is not None:
+                self[spec_name].setCurrentText(default_value)
+            grid.addWidget(self[spec_name], i, 1)
+        
+        self['UV'] = QCheckBox('UV')
+        grid.addWidget(self['UV'], len(LINE_SPECS), 0)
+
+        self.noline = QCheckBox('No Line')
+        self.noline.stateChanged.connect(self.adapt_noline)
+        grid.addWidget(self.noline, len(LINE_SPECS), 1)
+
+        self.setLayout(grid)
+
+
+    def __getitem__(self, key):
+        return self.specs[key]
+    
+
+    def __setitem__(self, key, value):
+        self.specs[key] = value
+    
+
+    def adapt_noline(self, state):
+        enable = Qt.CheckState(state) == Qt.CheckState.Unchecked
+        for spec_widget in self.specs.values():
+            spec_widget.setEnabled(enable)
+
+
+
+
+
 class SpeciesEditDialog(QDialog):
     ATTR_NAMES = ['Species', 'Line(s)', 'Prior']
 
@@ -163,7 +208,6 @@ class SpeciesEditDialog(QDialog):
         self.editor_grid = QGridLayout()
 
         self.editor_grid.addWidget(QLabel('Species:'), 0, 0, 1, 2)
-        self.editor_grid.addWidget(QLabel('Line(s):'), 0, 2, 1, 1)
         self.editor_grid.addWidget(QLabel('Truth:'), 2, 0, 1, 1)
         self.editor_grid.addWidget(QLabel('Prior:'), 3, 0, 1, 1)
         
@@ -178,6 +222,9 @@ class SpeciesEditDialog(QDialog):
                 self.species.setCurrentText(fullname)
         self.editor_grid.addWidget(self.species, 1, 0, 1, 2)
         
+        self.line_specs = LineSpecGroup()
+        self.editor_grid.addWidget(self.line_specs, 0, 2, 6, 4)
+        '''
         self.lines = EditableList()
         self.editor_grid.addWidget(self.lines, 1, 2, 6, 4)
         add_line = QPushButton('+')
@@ -186,6 +233,7 @@ class SpeciesEditDialog(QDialog):
         del_line.clicked.connect(self.lines.removeCurrentItem)
         self.editor_grid.addWidget(add_line, 0, 4, 1, 1)
         self.editor_grid.addWidget(del_line, 0, 5, 1, 1)
+        '''
 
         self.truth = QLineEdit()
         self.editor_grid.addWidget(self.truth, 2, 1, 1, 1)
@@ -225,7 +273,17 @@ class SpeciesEditDialog(QDialog):
         
         lines = self.species_dict[self.original_species].get('lines')
         if lines is not None:
-            self.lines.addItems(self.species_dict[self.original_species].get('lines'))
+            for line_name in lines:
+                if 'UV' in line_name:
+                    self.line_specs['UV'].setCheckState(Qt.CheckState.Checked)
+                else:
+                    specs = line_name.split('_')[1:]
+                    for spec_name, spec_value in zip(LINE_SPECS, specs):
+                        self.line_specs[spec_name].setCurrentText(spec_value)
+        else:
+            self.line_specs.noline.setChecked(True)
+        #if lines is not None:
+        #    self.lines.addItems(self.species_dict[self.original_species].get('lines'))
         #self.editor_grid.removeItem(self.editor_grid.itemAtPosition(4, 0))
     
 
@@ -245,7 +303,7 @@ class SpeciesEditDialog(QDialog):
         if new_prior == '(known)':
             return
         else:
-            param_box = QGroupBox('Parameters:')
+            param_box = QGroupBox('Parameters')
             self.editor_grid.addWidget(param_box, 4, 0, 1, 2)
             param_layout = QGridLayout(param_box)
             self.params = {}
@@ -263,7 +321,18 @@ class SpeciesEditDialog(QDialog):
         truth = float(self.truth.text())
         prior = self.prior.currentText()
         params = None if prior == '(known)' else [float(param.text()) for param in self.params.values()]
-        lines = None if self.lines.count() == 0 else [self.lines[i] for i in range(self.lines.count())]
+        lines = []
+        if not self.line_specs.noline.isChecked():
+            line_name_tokens = [self.line_specs[spec_name].currentText() for spec_name in LINE_SPECS]
+            line_name = current_species + '_'.join(line_name_tokens[:-1])
+            if line_name_tokens[-1] != LINE_SPECS['Resolution']['default']:
+                # add resolution token only if it's different from default
+                line_name = '%s_R_%s' % (line_name, line_name_tokens[-1])
+            lines.append(line_name)
+            if self.line_specs['UV'].isChecked():
+                lines.append(current_species + '_UV')
+        print(lines)
+
         self.species_dict[current_species] = param_dict(prior, params, truth, lines)
         self.close()
         
