@@ -7,5 +7,5 @@ source gui_env/bin/activate
 ```
 The required packages can be installed using `requirements.txt`.
 ```
-python3 -m pip install -r requirements.txt
+pip install -r requirements.txt
 ```
