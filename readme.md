@@ -9,3 +9,7 @@ The required packages can be installed using `requirements.txt`.
 ```
 pip install -r requirements.txt
 ```
+After installing all required packages, run the gui with
+```
+python gui.py
+```
