@@ -1,6 +1,6 @@
 # How to use the GUI
 The GUI is implemented with PySide6.
-According to the website of PySide, it is recommended to set up a virtual environment.
+According to the website of PySide (https://doc.qt.io/qtforpython/quickstart.html), it is recommended to run the GUI in a virtual environment.
 ```
 python3 -m venv gui_env
 source gui_env/bin/activate
