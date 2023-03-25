@@ -20,7 +20,7 @@ from config_handler import ConfigHandler
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, title='Config Editor for pyretlife (test)', width=900, height=600, fixed_size=True):
+    def __init__(self, title='Config Editor for pyretlife (test)', width=800, height=600, fixed_size=True):
         
         super().__init__()
         start_time = time()
@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
         central_tab.setTabPosition(QTabWidget.West)
         self.species_editor = SpeciesEditor(self.config['CHEMICAL COMPOSITION PARAMETERS'])
         central_tab.addTab(self.species_editor, 'Species')
-        central_tab.addTab(QLabel('Tab2'), 'Tab2')
+        central_tab.addTab(QLabel('Tab2'), 'PT profile')
         central_tab.addTab(QLabel('Tab3'), 'Tab3')
 
         self.setCentralWidget(central_tab)

@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QGroupBox
 )
 
-from widgets.util_widgets import EditableList
+from widgets.util_widgets import PriorBox
 from config_handler import param_dict
 from constants import SPECIES_NAMES, PRIOR_PARAM_NAMES, LINE_SPECS
 
@@ -108,7 +108,9 @@ class SpeciesTable(QTableWidget):
     
 
     def addEntry(self):
-        SpeciesEditDialog(self).exec()
+        add_dialog = SpeciesEditDialog(self)
+        add_dialog.truth.setText('0')
+        add_dialog.exec()
         self.refresh()
     
 
@@ -198,8 +200,6 @@ class LineSpecGroup(QGroupBox):
 
 
 class SpeciesEditDialog(QDialog):
-    ATTR_NAMES = ['Species', 'Line(s)', 'Prior']
-
     def __init__(self, parent, original_species=None):
         super().__init__(parent)
         self.setWindowTitle('Edit Species')
@@ -211,7 +211,6 @@ class SpeciesEditDialog(QDialog):
 
         self.editor_grid.addWidget(QLabel('Species:'), 0, 0, 1, 2)
         self.editor_grid.addWidget(QLabel('Truth:'), 2, 0, 1, 1)
-        self.editor_grid.addWidget(QLabel('Prior:'), 3, 0, 1, 1)
         
         self.species = QComboBox()
         for formula in SPECIES_NAMES:
@@ -226,27 +225,12 @@ class SpeciesEditDialog(QDialog):
         
         self.line_specs = LineSpecGroup()
         self.editor_grid.addWidget(self.line_specs, 0, 2, 6, 4)
-        '''
-        self.lines = EditableList()
-        self.editor_grid.addWidget(self.lines, 1, 2, 6, 4)
-        add_line = QPushButton('+')
-        add_line.clicked.connect(lambda: self.lines.addItem(''))
-        del_line = QPushButton('-')
-        del_line.clicked.connect(self.lines.removeCurrentItem)
-        self.editor_grid.addWidget(add_line, 0, 4, 1, 1)
-        self.editor_grid.addWidget(del_line, 0, 5, 1, 1)
-        '''
 
         self.truth = QLineEdit()
         self.editor_grid.addWidget(self.truth, 2, 1, 1, 1)
 
-        self.prior = QComboBox()
-        self.prior.addItems(PRIOR_PARAM_NAMES)
-        self.editor_grid.addWidget(self.prior, 3, 1, 1, 1)
-        for i, param in enumerate(PRIOR_PARAM_NAMES[self.prior.currentText()]):
-            self.editor_grid.addWidget(QLabel(param), 4+i, 0, 1, 1)
-            self.editor_grid.addWidget(QLineEdit(), 4+i, 1, 1, 1)
-        self.prior.currentTextChanged.connect(self.adapt_prior_params)
+        self.prior = PriorBox()
+        self.editor_grid.addWidget(self.prior, 3, 0, 1, 2)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Abort | QDialogButtonBox.Save)
         self.button_box.button(QDialogButtonBox.Abort).setText('Discard')
@@ -269,9 +253,9 @@ class SpeciesEditDialog(QDialog):
 
         prior_dict =  self.species_dict[self.original_species].get('prior', '(known)')
         if prior_dict != '(known)':
-            self.prior.setCurrentText(prior_dict['kind'])
-            for param_name in self.params:
-                self.params[param_name].setText(str(prior_dict['prior_specs'][param_name]))
+            self.prior.kind.setCurrentText(prior_dict['kind'])
+            for param_name in self.prior.params:
+                self.prior.params[param_name].setText(str(prior_dict['prior_specs'][param_name]))
         
         lines = self.species_dict[self.original_species].get('lines')
         if lines is not None:
@@ -289,94 +273,27 @@ class SpeciesEditDialog(QDialog):
         #self.editor_grid.removeItem(self.editor_grid.itemAtPosition(4, 0))
     
 
-    def adapt_prior_params(self):
-        # Important notes on deleting widgets from layout:
-        # - For unknown reason, deleteLater alone works for MainWindow, but not for Dialogs
-        # - For dialogs, removeWidget (or removeItem) has to be performed as well to make the widget disappear
-        # - Widgets other than MainWindow and Dialog were not tested
-        # - Using only removeWidget seems to move the widget out of the layout, but that widget remains in the window, at the lower left corner
-        # - Using removeWidget before applying the layout (with setLayout) crashes the program ("segmentation fault (core dumped)")
-        existing_item = self.editor_grid.itemAtPosition(4, 0)
-        if existing_item is not None:
-            existing_item.widget().deleteLater()
-            self.editor_grid.removeItem(existing_item)
-
-        new_prior = self.prior.currentText()
-        if new_prior == '(known)':
-            return
-        else:
-            param_box = QGroupBox('Parameters')
-            self.editor_grid.addWidget(param_box, 4, 0, 1, 2)
-            param_layout = QGridLayout(param_box)
-            self.params = {}
-            for i, param_name in enumerate(PRIOR_PARAM_NAMES[new_prior]):
-                param_layout.addWidget(QLabel(param_name + ':'), i, 0, 1, 1)
-                self.params[param_name] = QLineEdit()
-                param_layout.addWidget(self.params[param_name], i, 1, 1, 1)
-    
-
     def apply(self):
         current_species = self.species.currentText().split(' - ')[0]
         if self.original_species is not None and self.original_species != current_species:
             del self.species_dict[self.original_species]
         
         truth = float(self.truth.text())
-        prior = self.prior.currentText()
-        params = None if prior == '(known)' else [float(param.text()) for param in self.params.values()]
-        lines = []
-        if not self.line_specs.noline.isChecked():
-            line_name_tokens = [self.line_specs[spec_name].currentText() for spec_name in LINE_SPECS]
-            line_name = current_species + '_'.join(line_name_tokens[:-1])
+        prior = self.prior.kind.currentText()
+        params = None if prior == '(known)' else [float(param.text()) for param in self.prior.params.values()]
+        
+        if self.line_specs.noline.isChecked():
+            lines = None
+        else:
+            lines = []
+            line_name_tokens = [current_species] + [self.line_specs[spec_name].currentText() for spec_name in LINE_SPECS]
+            line_name = '_'.join(line_name_tokens[:-1])
             if line_name_tokens[-1] != LINE_SPECS['Resolution']['default']:
-                # add resolution token only if it's different from default
-                line_name = '%s_R_%s' % (line_name, line_name_tokens[-1])
+                # remove resolution token if it's same as default
+                line_name += '_R_%s' % line_name_tokens[-1]
             lines.append(line_name)
             if self.line_specs['UV'].isChecked():
                 lines.append(current_species + '_UV')
-        print(lines)
 
         self.species_dict[current_species] = param_dict(prior, params, truth, lines)
         self.close()
-        
-            
-
-        
-
-    '''
-    def __getitem__(self, key):
-        return self.attr_boxes[key].combobox.currentText()
-    
-
-    def __setitem__(self, key, text):
-        idx = self.attr_boxes[key].combobox.findText(text)
-        if idx == -1: # if text is not an existing option, insert it to top
-            self.attr_boxes[key].combobox.insertItem(0, text)
-            idx = 0
-        self.attr_boxes[key].combobox.setCurrentIndex(idx)
-    
-    
-    def read_current_species(self, species_table):
-        row = species_table.currentRow()
-        # special case for species name and formula
-        formula = species_table.item(row, 0).text()
-        name = species_table.item(row, 1).text()
-        species = ' - '.join([formula, name])
-        self['Species'] = species
-
-        # all other attributes
-        for col in range(2, SpeciesTable.N_COL):
-            text = species_table.item(row, col).text()
-            self[EditSpecies.ATTR_NAMES[col-1]] = text
-    
-
-    def apply(self):
-        attributes = self['Species'].split(' - ')
-        attributes += [self[key] for key in EditSpecies.ATTR_NAMES[1:]]
-        
-        if self.new_species:
-            self.table.addSpecies(attributes)
-        else:
-            self.table.editCurrentSpecies(attributes)
-        
-        self.close()
-    '''

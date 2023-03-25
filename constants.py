@@ -29,8 +29,13 @@ PRIOR_PARAM_NAMES = {
     'log-gaussian': ['log_mean', 'log_sigma']
 }
 
+PT_PARAMETERIZATIONS = {
+    'polynomial 4': ['a_%d' % i for i in range(5)]
+}
+
 LINE_SPECS = {
     # NB Resolution must the last one and a default resolution has to be specified
+    # For all other specs, the default is not required
     'Isotope': {'options': ['all', 'main'], 'default': 'main'},
     'Database': {'options': ['EX21', 'HP10', 'HN20', 'PK95'], 'default': 'HN20'},
     'Broadening': {'options': ['air', 'CO2', 'HH', 'H2O'], 'default': 'air'},
