@@ -1,14 +1,18 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QWidget,
     QListWidget,
     QLabel,
     QLineEdit,
+    QDoubleSpinBox,
     QComboBox,
     QGroupBox,
     QListWidgetItem,
     QAbstractItemView,
+    QHBoxLayout,
     QGridLayout
 )
+#from PySide6.QtGui import QDoubleValidator
 
 from constants import PRIOR_PARAM_NAMES
 
@@ -101,3 +105,42 @@ class PriorBox(QGroupBox):
             self.grid.addWidget(QLabel(param_name + ':'), i+1, 0)
             self.params[param_name] = QLineEdit()
             self.grid.addWidget(self.params[param_name], i+1, 1)
+
+
+
+
+class RangeEdit(QWidget):
+    def __init__(self):
+        super().__init__()
+        hbox = QHBoxLayout()
+        
+        self.lb = QDoubleSpinBox()
+        self.lb.setRange(1.0, 20.0)
+        self.lb.setSingleStep(0.5)
+        self.lb.valueChanged.connect(self.check_lower_bound)
+        hbox.addWidget(self.lb)
+
+        hbox.addWidget(QLabel('-'))
+
+        self.ub = QDoubleSpinBox()
+        self.ub.setRange(1.0, 20.0)
+        self.ub.setSingleStep(0.5)
+        self.ub.valueChanged.connect(self.check_upper_bound)
+        hbox.addWidget(self.ub)
+
+        self.setLayout(hbox)
+    
+
+    @property
+    def unbalanced(self):
+        return self.lb.value() > self.ub.value()
+    
+
+    def check_lower_bound(self):
+        if self.unbalanced:
+            self.lb.setValue(self.ub.value())
+    
+
+    def check_upper_bound(self):
+        if self.unbalanced:
+            self.ub.setValue(self.lb.value())

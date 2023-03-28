@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QGroupBox
 )
+from PySide6.QtGui import QDoubleValidator
 
 from widgets.util_widgets import PriorBox
 from config_handler import param_dict
@@ -59,7 +60,7 @@ class SpeciesTable(QTableWidget):
         if species_dict is not None:
             self.refresh()
         
-        #self.setSortingEnabled(True)
+        #self.setSortingEnabled(True) # leads to problems when refreshing the table!
         #self.setShowGrid(False)
 
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -207,10 +208,10 @@ class SpeciesEditDialog(QDialog):
         self.species_dict = self.parent.species_dict
         self.original_species = original_species
 
-        self.editor_grid = QGridLayout()
+        editor_grid = QGridLayout()
 
-        self.editor_grid.addWidget(QLabel('Species:'), 0, 0, 1, 2)
-        self.editor_grid.addWidget(QLabel('Truth:'), 2, 0, 1, 1)
+        editor_grid.addWidget(QLabel('Species:'), 0, 0, 1, 2)
+        editor_grid.addWidget(QLabel('Truth:'), 2, 0, 1, 1)
         
         self.species = QComboBox()
         for formula in SPECIES_NAMES:
@@ -221,16 +222,17 @@ class SpeciesEditDialog(QDialog):
             elif formula == self.original_species:
                 self.species.addItem(fullname)
                 self.species.setCurrentText(fullname)
-        self.editor_grid.addWidget(self.species, 1, 0, 1, 2)
+        editor_grid.addWidget(self.species, 1, 0, 1, 2)
         
         self.line_specs = LineSpecGroup()
-        self.editor_grid.addWidget(self.line_specs, 0, 2, 6, 4)
+        editor_grid.addWidget(self.line_specs, 0, 2, 6, 4)
 
         self.truth = QLineEdit()
-        self.editor_grid.addWidget(self.truth, 2, 1, 1, 1)
+        self.truth.setValidator(QDoubleValidator())
+        editor_grid.addWidget(self.truth, 2, 1, 1, 1)
 
         self.prior = PriorBox()
-        self.editor_grid.addWidget(self.prior, 3, 0, 1, 2)
+        editor_grid.addWidget(self.prior, 3, 0, 1, 2)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Abort | QDialogButtonBox.Save)
         self.button_box.button(QDialogButtonBox.Abort).setText('Discard')
@@ -239,7 +241,7 @@ class SpeciesEditDialog(QDialog):
         self.button_box.rejected.connect(self.close)
 
         main_layout = QVBoxLayout(self)
-        main_layout.addLayout(self.editor_grid)
+        main_layout.addLayout(editor_grid)
         main_layout.addWidget(self.button_box)
 
         if self.original_species is not None:
@@ -258,7 +260,9 @@ class SpeciesEditDialog(QDialog):
                 self.prior.params[param_name].setText(str(prior_dict['prior_specs'][param_name]))
         
         lines = self.species_dict[self.original_species].get('lines')
-        if lines is not None:
+        if lines is None:
+            self.line_specs.noline.setChecked(True)
+        else:
             for line_name in lines:
                 if 'UV' in line_name:
                     self.line_specs['UV'].setCheckState(Qt.CheckState.Checked)
@@ -266,11 +270,6 @@ class SpeciesEditDialog(QDialog):
                     specs = line_name.split('_')[1:]
                     for spec_name, spec_value in zip(LINE_SPECS, specs):
                         self.line_specs[spec_name].setCurrentText(spec_value)
-        else:
-            self.line_specs.noline.setChecked(True)
-        #if lines is not None:
-        #    self.lines.addItems(self.species_dict[self.original_species].get('lines'))
-        #self.editor_grid.removeItem(self.editor_grid.itemAtPosition(4, 0))
     
 
     def apply(self):

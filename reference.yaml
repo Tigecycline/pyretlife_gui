@@ -1,60 +1,63 @@
 GROUND TRUTH DATA:
-  input_profile: /net/ipa-gate/export/ipa/quanz/user_accounts/konradb/Retrieval_Inputs/Timmy/PT_Timmy_2.txt
+  input_profile: template_retrieval/inputs/Modern_Earth_pt_massfractions.csv
   data_files:
-  - /net/ipa-gate/export/ipa/quanz/user_accounts/konradb/Retrieval_Inputs/Timmy/Earth_Timmy_R200_ph_SN_10_2.txt
+    # TODO how to implement specific units in this case?
+    LIFE:
+      path: template_retrieval/inputs/Rugheimer_ModernEarth_cloudfree_R50_SNR10.txt
+      unit: micron, erg s-1 Hz-1 m-2
+
+
 RUN SETTINGS:
-  wavelength_range:
-  - 3
-  - 20
-  output_folder: .
-  live_points: 600
+  wavelength_range: [4,18.5]
+  output_folder: ../template_retrieval
   include_scattering:
-    Rayleigh: true
-    thermal: true
-    direct_light: true
-    clouds: false
-  include_CIA: true
-  include_moon: false
-  parameterization: polynomial
-  vae_net: decoder.onx
-  top_log_pressure: -6.0
-  n_layers: 100
+    Rayleigh: True
+    thermal: True
+    direct_light: True
+    clouds: False
+  include_CIA: True
+  resolution: 200
+  n_layers: 200
+
 TEMPERATURE PARAMETERS:
+  parameterization: polynomial
+#  vae_net: decoder.onx
   a_4:
     prior:
       kind: uniform
       prior_specs:
-        lower: 2.0
-        upper: 5.0
+        lower: 2.
+        upper: 5.
     truth: 3.67756393
   a_3:
     prior:
       kind: uniform
       prior_specs:
-        lower: 0.0
-        upper: 100.0
+        lower: 0.
+        upper: 100.
     truth: 136.42147966
   a_2:
     prior:
       kind: uniform
       prior_specs:
-        lower: 0.0
-        upper: 300.0
+        lower: 0.
+        upper: 300.
     truth: 182.6557084
   a_1:
     prior:
       kind: uniform
       prior_specs:
-        lower: 0.0
-        upper: 100.0
+        lower: 0.
+        upper: 100.
     truth: 136.42147966
   a_0:
     prior:
       kind: uniform
       prior_specs:
-        lower: 0.0
-        upper: 600.0
+        lower: 0.
+        upper: 600.
     truth: 292.92802205
+
 PHYSICAL PARAMETERS:
   P0:
     prior:
@@ -64,26 +67,25 @@ PHYSICAL PARAMETERS:
         log_upper: 2
     truth: 1.0294
   d_syst:
-    truth: 10.0
+    truth: 10.
   R_pl:
     prior:
       kind: gaussian
       prior_specs:
         mean: 1
         sigma: 0.2
-    truth: 1.0
-    unit: Rearth
+    truth: 1.
+    unit: test
   M_pl:
     prior:
       kind: log-gaussian
       prior_specs:
         log_mean: 0
         log_sigma: 0.4
-    truth: 1.0
+    truth: 1.
+
 CHEMICAL COMPOSITION PARAMETERS:
-  settings:
-    resolution: 200
-    mmw_inert: 28.0
+  mmw_inert: 28.
   N2:
     prior:
       kind: log-uniform
@@ -93,18 +95,18 @@ CHEMICAL COMPOSITION PARAMETERS:
     truth: 0.78
   O2:
     lines:
-    - O2_main_HN16_HH_Chubb
-    - O2_UV
+      - O2_main_HN16_HH_Chubb
+      - O2_UV
     prior:
       kind: log-uniform
       prior_specs:
         log_lower: -2
         log_upper: 0
-    truth: 0.2
+    truth: 0.20
   CO2:
     lines:
-    - CO2_main_HN20_air_C25
-    - CO2_UV
+      - CO2_main_HN20_air_C25
+      - CO2_UV
     prior:
       kind: log-uniform
       prior_specs:
@@ -113,18 +115,18 @@ CHEMICAL COMPOSITION PARAMETERS:
     truth: 0.004
   CH4:
     lines:
-    - CH4_main_HN20_air_C25
-    - CH4_UV
+      - CH4_main_HN20_air_C25
+      - CH4_UV
     prior:
       kind: log-uniform
       prior_specs:
         log_lower: -15
         log_upper: 0
-    truth: 1.7e-06
+    truth: 0.0000017
   H2O:
     lines:
-    - H2O_main_HN20_air_C25
-    - H2O_UV
+      - H2O_main_HN20_air_C25
+      - H2O_UV
     prior:
       kind: log-uniform
       prior_specs:
@@ -133,46 +135,84 @@ CHEMICAL COMPOSITION PARAMETERS:
     truth: 0.001
   O3:
     lines:
-    - O3_main_HN20_air_C25
-    - O3_UV
+      - O3_main_HN20_air_C25
+      - O3_UV
     prior:
       kind: log-uniform
       prior_specs:
         log_lower: -15
         log_upper: 0
-    truth: 3.0e-07
+    truth: 0.0000003
   CO:
     lines:
-    - CO_main_HN20_air_C25
-    - CO_UV
+      - CO_main_HN20_air_C25
+      - CO_UV
     prior:
       kind: log-uniform
       prior_specs:
         log_lower: -15
         log_upper: 0
-    truth: 1.25e-07
+    truth: 0.000000125
   N2O:
     lines:
-    - N2O_main_HN20_air_C25
-    - N2O_UV
+      - N2O_main_HN20_air_C25
+      - N2O_UV
     prior:
       kind: log-uniform
       prior_specs:
         log_lower: -15
         log_upper: 0
-    truth: 3.2e-07
-SCATTERING PARAMETERS:
+    truth: 0.00000032
+
+SCATTERING PARAMETERS: #read when necessary
   reflectance:
     truth: 0.1
   emissivity:
-    truth: 1.0
+    truth: 1.
   stellar_temperature:
-    truth: 5778.0
+    truth: 5778.
   stellar_radius:
-    truth: 1.0
+    truth: 1.
   semimajor_axis:
-    truth: 1.0
+    truth: 1.
+
 CLOUD PARAMETERS:
-  composition: transparent
+  settings_clouds: transparent
+  H2SO484(c)_am:
+    prior:
+      kind: log-uniform
+      prior_specs:
+        log_lower: -7
+        log_upper: -1
+    truth: 8e-6
+  H2SO484(c)_am_top_pressure:
+    prior:
+      kind: log-uniform
+      prior_specs:
+        log_lower: -6
+        log_upper: 3
+    truth: 5e-2
+  H2SO484(c)_am_thickness:
+    prior:
+      kind: log-uniform
+      prior_specs:
+        log_lower: -6
+        log_upper: 2
+    truth: 1.45
+  H2SO484(c)_am_particle_radius:
+    prior:
+      kind: log-uniform
+      prior_specs:
+        log_lower: -8
+        log_upper: 3
+    truth: 5e-5
+  H2SO484(c)_am_sigma_lnorm:
+    prior:
+      kind: log-uniform
+      prior_specs:
+        log_lower: 1
+        log_upper: 5
+    truth: 1.95
+
 USER-DEFINED UNITS:
-  R_sun: 1m
+  test: 1m

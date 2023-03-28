@@ -14,13 +14,15 @@ from PySide6.QtWidgets import (
 )
 
 from widgets.species_editor import SpeciesEditor
+from widgets.temperature_editor import TempEditor
+from widgets.run_settings_editor import RunSettingsEditor
 from config_handler import ConfigHandler
-        
+
 
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, title='Config Editor for pyretlife (test)', width=800, height=600, fixed_size=True):
+    def __init__(self, title='Config Editor for pyretlife (test)', width=720, height=480, fixed_size=True):
         
         super().__init__()
         start_time = time()
@@ -44,12 +46,23 @@ class MainWindow(QMainWindow):
         load_action.triggered.connect(self.load_yaml)
         self.file_menu.addAction(load_action)
 
+        preview_action = QAction('Preview', self)
+        #preview_action.triggered.connect(self.preview)
+        self.file_menu.addAction(preview_action)
+
         central_tab = QTabWidget()
-        central_tab.setTabPosition(QTabWidget.West)
+        central_tab.setTabPosition(QTabWidget.North)
+        
+        self.pt_editor = RunSettingsEditor(self.config['GROUND TRUTH DATA'], self.config['RUN SETTINGS'])
+        central_tab.addTab(self.pt_editor, 'Run Settings')
+
+        self.temp_editor = TempEditor()
+        central_tab.addTab(self.temp_editor, 'Temperature')
+        
         self.species_editor = SpeciesEditor(self.config['CHEMICAL COMPOSITION PARAMETERS'])
         central_tab.addTab(self.species_editor, 'Species')
-        central_tab.addTab(QLabel('Tab2'), 'PT profile')
-        central_tab.addTab(QLabel('Tab3'), 'Tab3')
+        
+        central_tab.addTab(QLabel('To be implemented'), 'Clouds')
 
         self.setCentralWidget(central_tab)
 
