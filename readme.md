@@ -13,3 +13,7 @@ After installing all required packages, run the gui with
 ```
 python gui.py
 ```
+
+# Possibility to add more options
+In `constants.py`, the options available for various settings can be modified.
+These include the gas species, the prior distributions of the parameters, the P-T profile parameterization, the opacity line specifications and the flux unit.
