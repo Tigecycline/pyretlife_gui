@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from widgets.species_editor import SpeciesEditor
-from widgets.temperature_editor import TempEditor
+from widgets.physical_editor import PhysEditor
 from widgets.run_settings_editor import RunSettingsEditor
 from config_handler import ConfigHandler
 
@@ -21,7 +21,7 @@ from config_handler import ConfigHandler
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, title='Config Editor for pyretlife (test)', width=640, height=480, fixed_size=True):
+    def __init__(self, title='Config Editor (test)', width=640, height=480, fixed_size=True):
         start_time = time()
 
         super().__init__()
@@ -60,8 +60,8 @@ class MainWindow(QMainWindow):
         self.pt_editor = RunSettingsEditor(self.config)
         central_tab.addTab(self.pt_editor, 'Run Settings')
 
-        self.temp_editor = TempEditor()
-        central_tab.addTab(self.temp_editor, 'Temperature')
+        self.phys_editor = PhysEditor(self.config)
+        central_tab.addTab(self.phys_editor, 'Physical Parameters')
 
         self.species_editor = SpeciesEditor(self.config)
         central_tab.addTab(self.species_editor, 'Species')
@@ -77,6 +77,7 @@ class MainWindow(QMainWindow):
     def save(self, fname=None):
         self.pt_editor.write_to_config(self.config)
         self.species_editor.write_to_config(self.config)
+        self.phys_editor.write_to_config(self.config)
         
         self.config.write_yaml()
         self.close()
@@ -91,23 +92,3 @@ class MainWindow(QMainWindow):
             self.config.read_yaml(fname)
             self.species_editor.table.species_dict = self.config['CHEMICAL COMPOSITION PARAMETERS']
             self.species_editor.table.refresh()
-
-
-
-
-#class CentralTab(QTabWidget):
-#    def __init__(self, config):
-#        super().__init__()
-#        self.config = config
-#        self.setTabPosition(QTabWidget.North)
-#
-#        self.pt_editor = RunSettingsEditor(self.config['GROUND TRUTH DATA'], self.config['RUN SETTINGS'])
-#        self.addTab(self.pt_editor, 'Run Settings')
-#
-#        self.temp_editor = TempEditor()
-#        self.addTab(self.temp_editor, 'Temperature')
-#
-#        self.species_editor = SpeciesEditor(self.config['CHEMICAL COMPOSITION PARAMETERS'])
-#        self.addTab(self.species_editor, 'Species')
-#        
-#        self.addTab(QLabel('To be implemented'), 'Clouds')

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QDoubleValidator
 
-from widgets.util_widgets import PriorBox
+from widgets.util_widgets import VPriorBox
 from config_handler import param_dict
 from constants import SPECIES_NAMES, LINE_SPECS
 
@@ -64,7 +64,7 @@ class SpeciesTable(QTableWidget):
 
     def __init__(self, config):
         super().__init__(0, len(SpeciesTable.COLUMNS))
-        self.setDragEnabled(True) # todo?: allow reordering via drag & drop
+        #self.setDragEnabled(True) # todo?: allow reordering via drag & drop
 
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setEditTriggers(QAbstractItemView.NoEditTriggers) # diable direct editing
@@ -141,7 +141,6 @@ class SpeciesTable(QTableWidget):
 
     def add_entry(self):
         add_dialog = SpeciesEditDialog(self)
-        add_dialog.truth.setText('0')
         add_dialog.exec()
     
 
@@ -241,12 +240,11 @@ class LineSpecGroup(QGroupBox):
     
 
     def adapt_noline(self, state):
-        enable = Qt.CheckState(state) == Qt.CheckState.Unchecked
+        enable = (Qt.CheckState(state) == Qt.CheckState.Unchecked)
         for spec_widget in self.specs.values():
             spec_widget.setEnabled(enable)
         for label in self.labels:
             label.setEnabled(enable)
-
 
 
 
@@ -261,7 +259,6 @@ class SpeciesEditDialog(QDialog):
         editor_grid = QGridLayout()
 
         editor_grid.addWidget(QLabel('Species:'), 0, 0, 1, 2)
-        editor_grid.addWidget(QLabel('Truth:'), 2, 0, 1, 1)
         
         self.formula_name = QComboBox()
         editor_grid.addWidget(self.formula_name, 1, 0, 1, 2)
@@ -269,12 +266,8 @@ class SpeciesEditDialog(QDialog):
         self.line_specs = LineSpecGroup()
         editor_grid.addWidget(self.line_specs, 0, 2, 6, 4)
 
-        self.truth = QLineEdit()
-        self.truth.setValidator(QDoubleValidator())
-        editor_grid.addWidget(self.truth, 2, 1, 1, 1)
-
-        self.prior = PriorBox()
-        editor_grid.addWidget(self.prior, 3, 0, 1, 2)
+        self.prior = VPriorBox('Abundance')
+        editor_grid.addWidget(self.prior, 2, 0, 1, 2)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
         self.button_box.button(QDialogButtonBox.Ok).setText('Accept')
@@ -305,33 +298,29 @@ class SpeciesEditDialog(QDialog):
         # otherwise, we are editting an existing species, so we read its current settings
         self.formula_name.addItem(' - '.join([self.target.formula, SPECIES_NAMES[self.target.formula]]))
         self.formula_name.setCurrentIndex(0)
-        self.formula_name.setEnabled(False) # the user is not allowed to change the species itself
+        self.formula_name.setEnabled(False) # in this case the user is not allowed to change the species
 
-        self.truth.setText(self.target.truth)
-
-        if self.target.prior_name != '(known)':
-            self.prior.kind.setCurrentText(self.target.prior_name)
-            for i, param_value in enumerate(self.target.prior_params):
-                self.prior.params[i].setText(param_value)
+        self.prior.truth.setText(self.target.truth)
+        self.prior.kind.setCurrentText(self.target.prior_name)
+        for param_ledit, param_value in zip(self.prior.prior_params.values(), self.target.prior_params):
+            param_ledit.setText(param_value)
         
+        for file_name in self.target.lines:
+            if 'UV' in file_name:
+                self.line_specs['UV'].setCheckState(Qt.CheckState.Checked)
+            else:
+                specs = file_name.split('_')[1:]
+                for spec_name, spec_value in zip(LINE_SPECS, specs):
+                    self.line_specs[spec_name].setCurrentText(spec_value)
         if len(self.target.lines) == 0:
             self.line_specs.noline.setChecked(True)
-        else:
-            assert(len(self.target.lines) <= 2)
-            for file_name in self.target.lines:
-                if 'UV' in file_name:
-                    self.line_specs['UV'].setCheckState(Qt.CheckState.Checked)
-                else:
-                    specs = file_name.split('_')[1:]
-                    for spec_name, spec_value in zip(LINE_SPECS, specs):
-                        self.line_specs[spec_name].setCurrentText(spec_value)
     
 
     def apply(self):
         formula = self.formula_name.currentText().split(' - ')[0]
         prior_name = self.prior.kind.currentText()
-        prior_params = [param.text() for param in self.prior.params]
-        truth = self.truth.text()
+        prior_params = [param.text() for param in self.prior.prior_params.values()]
+        truth = self.prior.truth.text()
         if self.line_specs.noline.isChecked():
             lines = None
         else:
